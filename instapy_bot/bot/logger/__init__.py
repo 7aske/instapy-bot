@@ -1,1 +1,1 @@
-import instapy_bot.bot.logger.logger as logger
+import instapy_bot.bot.logger.logger

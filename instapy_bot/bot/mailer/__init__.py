@@ -1,1 +1,1 @@
-import instapy_bot.bot.mailer.mailer as mailer
+import instapy_bot.bot.mailer.mailer

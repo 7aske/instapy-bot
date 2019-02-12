@@ -1,6 +1,5 @@
 from os import getcwd
 from os.path import join, isabs
-from pathlib import Path
 from datetime import datetime as dt
 
 
