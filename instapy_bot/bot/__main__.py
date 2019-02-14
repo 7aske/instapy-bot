@@ -35,6 +35,7 @@ mail_to = ""
 photos = PhotoStack()
 reg_caption = ""
 bnw_caption = ""
+text_caption = ""
 
 
 def main():
@@ -161,7 +162,7 @@ def main():
 
 
 def update_config(cfg, cfg_path):
-    global username, password, reg_caption, bnw_caption, logger
+    global username, password, reg_caption, bnw_caption, logger, text_caption
     if exists(cfg_path):
         cfg.read(cfg_path)
         if "credentials" not in cfg:
@@ -179,6 +180,8 @@ def update_config(cfg, cfg_path):
             password = getpass.getpass()
         print("Password: %s" % "".join(["*" for _ in password]))
         if "caption" in config:
+            if "text" in config["caption"]:
+                text_caption = config["caption"]["text"]
             if "bnw" in config["caption"]:
                 bnw_caption = " ".join(["#" + tag for tag in config["caption"]["bnw"].split(" ")])
             if "reg" in config["caption"]:
@@ -198,9 +201,14 @@ def update_config(cfg, cfg_path):
 def upload_photo():
     global logger, bedtime, photos, reg_caption, bnw_caption, username, password
     photo = photos.pop()
-    caption = photo.caption if len(photo.caption) > 0 else reg_caption
-    if is_bnw(photo.path):
-        caption += "\n\n" + bnw_caption
+    caption = ""
+    if len(text_caption) > 0:
+        caption += text_caption
+    if len(reg_caption) > 0:
+        caption += "\n" + reg_caption
+    if len(bnw_caption) > 0:
+        if is_bnw(photo.path):
+            caption += "\n\n" + bnw_caption
     try:
         with client(username, password) as cli:
             logger.log(str(photo))

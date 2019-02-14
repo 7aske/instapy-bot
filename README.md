@@ -32,14 +32,15 @@ to = mail_to
 username = mailer_username
 password = mailer_password
 
-[tags]
-reg = \ #nature #candid #photooftheday
-bnw = \ #bnw #blackandwhite
+[caption]
+text = Text based caption
+reg = nature candid photooftheday
+bnw = bnw blackandwhite
 ```
 As you can see there are some aditional settings.\
 `config` section is used to specify paramters that you would otherwise assign in the command line.\
 `mailer` section is used to provide mail notification using pythons built in smpt library. There you would use your spare email account and send yourself email notifications.\
-`tags` section is used to assign captions to photographs. Bot can distinguish between grayscale and color images and assign different groups of tags to each. Keep in mind that if the photo is grayscale bnw tags are just getting appended to the existings ones.
+`caption` section is used to assign captions to photographs. Bot can distinguish between grayscale and color images and assign different groups of tags to each. Keep in mind that if the photo is grayscale bnw tags are just getting appended to the existings ones. `bnw` and `reg` are being parsed as hashtags("#" is added to front) and `text` is the caption text.
 
 ---
 Furthermore you can put a file with the same name as the photograph in the folder only with `.txt` extension containing the caption and the bot will read that instead of the predefined ones.
