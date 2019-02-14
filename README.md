@@ -96,7 +96,13 @@ Basic structure of package is
 Package requirements are handled using pip. To install them do
 
 ```
-pip install -r requirements.txt
+# pip3 install -r requirements.txt
+```
+
+## Installation
+
+```
+# sudo pip3 install .
 ```
 ## Conclusion
 
