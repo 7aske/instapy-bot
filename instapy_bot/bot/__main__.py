@@ -151,7 +151,7 @@ def main():
                     else:
                         newdate = date - dt.now()
                         logger.log("Waiting for scheduled upload")
-                        logger.log("Next upload - %s" % date.strftime(logger.dt_format))
+                        logger.log("Next upload - %s" % date.strftime(dt_format))
                         sleep(newdate.seconds + 1)
         except KeyboardInterrupt:
             logger.log("\r**************************")
