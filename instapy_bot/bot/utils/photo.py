@@ -13,5 +13,5 @@ class Photo:
         return self.caption
 
     def __repr__(self) -> str:
-        return "<Photo path='{path}' caption='{caption}'>".format(path=self.path, caption=self.caption)
+        return "Photo path='{path}' caption='{caption}'".format(path=self.path, caption=self.caption)
 

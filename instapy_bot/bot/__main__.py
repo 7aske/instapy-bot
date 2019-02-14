@@ -202,17 +202,19 @@ def upload_photo():
     global logger, bedtime, photos, reg_caption, bnw_caption, username, password
     photo = photos.pop()
     caption = ""
-    if len(text_caption) > 0:
-        caption += text_caption
-    if len(reg_caption) > 0:
-        caption += "\n" + reg_caption
-    if len(bnw_caption) > 0:
-        if is_bnw(photo.path):
-            caption += "\n\n" + bnw_caption
+    if len(photo.caption) == 0:
+        if len(text_caption) > 0:
+            caption += text_caption
+        if len(reg_caption) > 0:
+            caption += "\n" + reg_caption
+        if len(bnw_caption) > 0:
+            if is_bnw(photo.path):
+                caption += "\n\n" + bnw_caption
+        photo.set_caption(caption)
     try:
         with client(username, password) as cli:
             logger.log(str(photo))
-            cli.upload(photo.path, caption)
+            cli.upload(photo.path, photo.caption)
         remove(photo.path)
     except IOError as e:
         if "The password you entered is incorrect." in str(e):

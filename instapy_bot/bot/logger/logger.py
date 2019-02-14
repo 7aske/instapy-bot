@@ -19,7 +19,7 @@ class Logger:
         output = "{}:\t{}".format(dt.now().strftime(self.dt_format), data + "\n")
         if self.out:
             with open(self.file, "a+") as f:
-                f.write(output)
+                f.write(output.replace("\n", " "))
         print(data)
 
     def set_file(self, file):
