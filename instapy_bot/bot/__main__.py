@@ -89,7 +89,8 @@ def main():
     except Exception:
         raise SystemExit("Usage: -f <folder> -t <timeout> -c <config> [--watch] [--bedtime] [--log]")
     if not exists(photos_dir):
-        raise SystemExit("Photos directory doesn't exist.\n%s" % photos_dir)
+        logger.log("Photos directory doesn't exist.\n%s" % photos_dir)
+        raise SystemExit
     with open(config_path, "w") as configfile:
         config.write(configfile)
 
@@ -177,11 +178,11 @@ def update_config(cfg, cfg_path):
         if password == "":
             password = getpass.getpass()
         print("Password: %s" % "".join(["*" for _ in password]))
-        if "tags" in config:
-            if "bnw" in config["tags"]:
-                bnw_caption = config["tags"]["bnw"]
-            if "reg" in config["tags"]:
-                reg_caption = config["tags"]["reg"]
+        if "caption" in config:
+            if "bnw" in config["caption"]:
+                bnw_caption = " ".join(["#" + tag for tag in config["caption"]["bnw"].split(" ")])
+            if "reg" in config["caption"]:
+                reg_caption = " ".join(["#z" + tag for tag in config["caption"]["reg"].split(" ")])
             logger.log("Updated tags from .ini")
     else:
         username = input("Username: ")
