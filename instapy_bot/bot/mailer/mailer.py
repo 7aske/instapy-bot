@@ -29,7 +29,7 @@ class Mailer:
             Remaining photos: <b>{remaining}</b>.
           </body>
         </html>
-        """.format(account=self.username, nextupload=nextupload, remaining=remaining)
+        """.format(account=self.account, nextupload=nextupload, remaining=remaining)
         text = ("Subject: Instagram Upload\n\n"
                 "New photo uploaded on account %s.\n\n"
                 "Next scheduled for: %s.\n"

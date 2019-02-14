@@ -124,26 +124,30 @@ def main():
                             content = nextupload.read()
                             date = dt.strptime(content, dt_format)
                     if dt.now() >= date:
-                        try:
-                            upload_photo()
-                        except WrongPassword as e:
-                            logger.log(str(e))
-                            raise SystemExit
-                        except ServerError as e:
-                            logger.log(str(e))
-                            raise SystemExit
-                        s = get_timeout(timeout)
-                        n = dt.now() + timedelta(seconds=s)
-                        logger.log("Next upload - %s" % n.strftime(dt_format))
-                        with open(next_upload, "w") as nextupload:
-                            nextupload.write(n.strftime(dt_format))
-                        if mail:
+                        if 1 < date.hour < 9 and bedtime:
+                            logger.log("Bed time, skipping upload")
+                            sleep(get_timeout((10 - date.hour) * 3600))
+                        else:
                             try:
-                                mailer.send_mail(n.strftime(dt_format), len(photos))
-                                logger.log("Mail sent")
-                            except Exception:
-                                logger.log("Unable to send mail")
-                        sleep(s)
+                                upload_photo()
+                            except WrongPassword as e:
+                                logger.log(str(e))
+                                raise SystemExit
+                            except ServerError as e:
+                                logger.log(str(e))
+                                raise SystemExit
+                            s = get_timeout(timeout)
+                            n = dt.now() + timedelta(seconds=s)
+                            with open(next_upload, "w") as nextupload:
+                                nextupload.write(n.strftime(dt_format))
+                            if mail:
+                                try:
+                                    mailer.send_mail(n.strftime(dt_format), len(photos))
+                                    logger.log("Mail sent")
+                                except IOError:
+                                    logger.log("Unable to send mail")
+                            logger.log("Next upload - %s" % n.strftime(dt_format))
+                            sleep(s)
                     else:
                         newdate = date - dt.now()
                         logger.log("Waiting for scheduled upload")
@@ -192,9 +196,6 @@ def update_config(cfg, cfg_path):
 
 def upload_photo():
     global logger, bedtime, photos, reg_caption, bnw_caption, username, password
-    if 1 < dt.now().hour < 9 and bedtime:
-        logger.log("Bed time, skipping upload")
-        return
     photo = photos.pop()
     caption = photo.caption if len(photo.caption) > 0 else reg_caption
     if is_bnw(photo.path):
