@@ -2,7 +2,7 @@ import getpass
 from os import getcwd, listdir, remove
 from os.path import exists, join, isabs, splitext
 from platform import python_version
-from sys import argv
+from sys import argv, platform
 import configparser
 from time import sleep
 from datetime import datetime as dt, timedelta
@@ -177,7 +177,10 @@ def update_config(cfg, cfg_path):
         if username == "":
             raise SystemExit("Invalid instapy-bot.ini username.")
         if password == "":
-            password = getpass.getpass()
+            if platform == "win32":
+                password = getpass.win_getpass("Password: ")
+            else:
+                password = getpass.getpass("Password: ")
         print("Password: %s" % "".join(["*" for _ in password]))
         if "caption" in config:
             if "text" in config["caption"]:
