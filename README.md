@@ -102,7 +102,7 @@ Package requirements are handled using pip. To install them do
 ## Installation
 
 ```
-# sudo pip3 install .
+# sudo pip3 install -I -e .
 ```
 ## Conclusion
 

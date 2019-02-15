@@ -3,7 +3,7 @@ from instapy_bot.version import Version
 
 
 setuptools.setup(name="instapy_bot",
-                 version=Version("0.1.0").number,
+                 version=Version("0.1.1").number,
                  description="Python instagram automated uploader",
                  long_description=open("README.md").read().strip(),
                  author="Nikola Tasic",

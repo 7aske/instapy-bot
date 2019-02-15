@@ -1,4 +1,4 @@
-from os import getcwd
+from os import getcwd, getpid
 from os.path import join, isabs
 from datetime import datetime as dt
 
@@ -6,7 +6,7 @@ from datetime import datetime as dt
 class Logger:
     file = ""
     out = True
-    dt_format = "%d/%m %H:%M:%S"
+    dt_format = "%H:%M:%S"
 
     def __init__(self, file, out=True):
         if isabs(file):
@@ -16,10 +16,10 @@ class Logger:
         self.out = out
 
     def log(self, data):
-        output = "{}:\t{}".format(dt.now().strftime(self.dt_format), data + "\n")
+        output = "{}-{}\t{}".format(getpid(), dt.now().strftime(self.dt_format), data)
         if self.out:
             with open(self.file, "a+") as f:
-                f.write(output.replace("\n", " "))
+                f.write(output.replace("\n", " ") + "\n")
         print(data)
 
     def set_file(self, file):
