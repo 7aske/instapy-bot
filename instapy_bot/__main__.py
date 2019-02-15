@@ -206,7 +206,7 @@ def update_config(cfg, cfg_path):
             if "bnw" in config["caption"]:
                 bnw_caption = " ".join(["#" + tag for tag in config["caption"]["bnw"].split(" ")])
             if "reg" in config["caption"]:
-                reg_caption = " ".join(["#z" + tag for tag in config["caption"]["reg"].split(" ")])
+                reg_caption = " ".join(["#" + tag for tag in config["caption"]["reg"].split(" ")])
             logger.log("Updated tags from .ini")
     else:
         try:
