@@ -132,14 +132,15 @@ def main():
                     sleep(s)
                 else:
                     date = dt.now()
+                    newdate = dt.now()
                     if exists(next_upload):
                         with open(next_upload, "r") as nextupload:
                             content = nextupload.read()
                             date = dt.strptime(content, dt_format)
-                    if dt.now() >= date:
-                        if 1 < date.hour < 9 and bedtime:
+                    if newdate >= date:
+                        if 1 < newdate.hour < 9 and bedtime:
                             logger.log("Bed time, skipping upload")
-                            sleep(get_timeout((10 - date.hour) * 3600))
+                            sleep(get_timeout((10 - newdate.hour) * 3600))
                         else:
                             try:
                                 upload_photo()
