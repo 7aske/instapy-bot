@@ -60,26 +60,34 @@ def main():
             config_path = path if isabs(path) else join(getcwd(), path)
         else:
             config_path = join(getcwd(), "instapy-bot.ini")
-    except Exception:
-        raise SystemExit("Usage: -f <folder> -t <timeout> -c <config> [--watch] [--bedtime] [--log]")
-    try:
         if "-f" in argv:
             path = argv[argv.index("-f") + 1]
             photos_dir = path if isabs(path) else join(getcwd(), path)
-        elif "folder" in config["config"]:
-            path = config["config"]["folder"]
-            photos_dir = path if isabs(path) else join(getcwd(), path)
+        elif "config" in config:
+            if "folder" in config["config"]:
+                path = config["config"]["folder"]
+                photos_dir = path if isabs(path) else join(getcwd(), path)
         else:
-            photos_dir = getcwd()
+            print("Current dir: {}".format(getcwd()))
+            path = input("Photos folder: ")
+            photos_dir = join(getcwd(), path)
         if "-t" in argv:
             try:
                 timeout = int(argv[argv.index("-t") + 1])
             except ValueError:
                 timeout = 43200
-        elif "timeout" in config["config"]:
-            timeout = int(config["config"]["timeout"])
+        elif "config" in config:
+            if "timeout" in config["config"]:
+                timeout = int(config["config"]["timeout"])
         else:
-            timeout = 43200
+            userinput = input("Timeout (default=43000s): ")
+            if userinput == "":
+                timeout = 43200
+            else:
+                try:
+                    timeout = int(userinput)
+                except ValueError:
+                    logger.log("Invalid timeout input.")
 
         config["config"] = {
             "timeout": timeout,
@@ -87,7 +95,8 @@ def main():
         }
 
     except Exception:
-        raise SystemExit("Usage: -f <folder> -t <timeout> -c <config> [--watch] [--bedtime] [--log]")
+        logger.log("Usage: -f <folder> -t <timeout> -c <config> [--watch] [--bedtime] [--log]")
+        raise SystemExit
     if not exists(photos_dir):
         logger.log("Photos directory doesn't exist.\n%s" % photos_dir)
         raise SystemExit
@@ -160,7 +169,7 @@ def main():
         except KeyboardInterrupt:
             logger.log("\r**************************")
     else:
-        raise SystemExit("Bye")
+        raise SystemExit
 
 
 def update_config(cfg, cfg_path):
@@ -168,16 +177,19 @@ def update_config(cfg, cfg_path):
     if exists(cfg_path):
         cfg.read(cfg_path)
         if "credentials" not in cfg:
-            raise SystemExit("Bad config file.")
+            logger.log("Bad config file.")
+            raise SystemExit
         else:
             if "username" not in cfg["credentials"] or "password" not in cfg["credentials"]:
-                raise SystemExit("Bad config file.")
+                logger.log("Bad config file.")
+                raise SystemExit
 
         username = cfg["credentials"]["username"]
         password = cfg["credentials"]["password"]
         print("Account: %s" % username)
         if username == "":
-            raise SystemExit("Invalid instapy-bot.ini username.")
+            logger.log("Invalid instapy-bot.ini username.")
+            raise SystemExit
         if password == "":
             try:
                 if platform == "win32":
@@ -278,6 +290,8 @@ def update_tags():
 if __name__ == "__main__":
     try:
         main()
-        input("Press any key to exit...")
     except KeyboardInterrupt:
         pass
+    except SystemExit:
+        input("Press any key to exit...")
+
