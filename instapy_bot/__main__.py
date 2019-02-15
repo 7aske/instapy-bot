@@ -8,13 +8,12 @@ from time import sleep
 from datetime import datetime as dt, timedelta
 
 from instapy_bot.cli import client
-import pkg_resources
 from instapy_bot.bot.utils import is_bnw, get_timeout, validate_mail, PhotoStack, ServerError, WrongPassword
 from instapy_bot.bot.logger.logger import Logger
 from instapy_bot.bot.mailer.mailer import Mailer
 from instapy_bot.bot.utils.photo import Photo
 
-version = pkg_resources.require("instapy_bot")[0].version
+version = "0.1.1"
 
 config = configparser.ConfigParser()
 config_path = join(getcwd(), "instapy-bot.ini")
@@ -106,7 +105,10 @@ def main():
     while answer.upper() not in possible_answers:
         print("Start uploading from: '%s'" % photos_dir, end="")
         print(" with timeout of '%d'" % timeout)
-        answer = input("Are you sure? (Y/N) ")
+        try:
+            answer = input("Are you sure? (Y/N) ")
+        except KeyboardInterrupt:
+            pass
     if answer.upper() == "Y":
         update_photos()
         try:
@@ -177,10 +179,13 @@ def update_config(cfg, cfg_path):
         if username == "":
             raise SystemExit("Invalid instapy-bot.ini username.")
         if password == "":
-            if platform == "win32":
-                password = getpass.win_getpass("Password: ")
-            else:
-                password = getpass.getpass("Password: ")
+            try:
+                if platform == "win32":
+                    password = getpass.win_getpass("Password: ")
+                else:
+                    password = getpass.getpass("Password: ")
+            except KeyboardInterrupt:
+                pass
         print("Password: %s" % "".join(["*" for _ in password]))
         if "caption" in config:
             if "text" in config["caption"]:
@@ -191,8 +196,11 @@ def update_config(cfg, cfg_path):
                 reg_caption = " ".join(["#z" + tag for tag in config["caption"]["reg"].split(" ")])
             logger.log("Updated tags from .ini")
     else:
-        username = input("Username: ")
-        password = getpass.getpass()
+        try:
+            username = input("Username: ")
+            password = getpass.getpass()
+        except KeyboardInterrupt:
+            pass
         cfg["credentials"] = {
             "username": username,
             "password": password
@@ -270,5 +278,6 @@ def update_tags():
 if __name__ == "__main__":
     try:
         main()
+        input("Press any key to exit...")
     except KeyboardInterrupt:
         pass
