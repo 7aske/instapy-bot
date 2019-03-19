@@ -111,13 +111,16 @@ def main():
         mailer = Mailer(mail_username, mail_password, mail_to, username)
     possible_answers = ["Y", "N"]
     answer = ""
-    while answer.upper() not in possible_answers:
-        print("Start uploading from: '%s'" % photos_dir, end="")
-        print(" with timeout of '%d'" % timeout)
-        try:
-            answer = input("Are you sure? (Y/N) ")
-        except KeyboardInterrupt:
-            pass
+    if "-y" not in argv:
+        while answer.upper() not in possible_answers:
+            print("Start uploading from: '%s'" % photos_dir, end="")
+            print(" with timeout of '%d'" % timeout)
+            try:
+                answer = input("Are you sure? (Y/N) ")
+            except KeyboardInterrupt:
+                pass
+    else:
+        answer = "y"
     if answer.upper() == "Y":
         update_photos()
         try:
