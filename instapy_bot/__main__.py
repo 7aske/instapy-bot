@@ -30,10 +30,12 @@ watch = False
 bedtime = False
 mail = False
 # END###FLAGS#####
+# MAIL#CONFIG#####
 mailer = None
 mail_username = ""
 mail_password = ""
 mail_to = ""
+# MAIL#CONFIG#END#
 timeout = 4320
 dt_format = "%Y/%d/%m %H:%M:%S"
 photos = PhotoStack()
@@ -43,24 +45,27 @@ text_caption = ""
 
 
 def main():
+	global watch, bedtime, config, config_path, logger, username, \
+		password, timeout, mail_to, mail_password, mail_username, mail, mailer
+
 	if "--help" in argv or "-h" in argv or "-help" in argv:
 		print_help()
 		raise SystemExit
-	global watch, bedtime, config, config_path, logger, username, \
-		password, timeout, mail_to, mail_password, mail_username, mail, mailer
+	elif "--config" in argv or "-C" in argv:
+		generate_config(config, config_path)
+		raise SystemExit
+
 	print(version_line)
 	if "--log" not in argv and "-l" not in argv:
 		logger.set_out(False)
-		logger.log("Logging - off")
+		logger.log("Logging   - off")
 	update_config(config, config_path)
 	if "--watch" in argv or "-w" in argv:
 		watch = True
 		logger.log("Watch mode - on")
-		argv.remove("--watch")
 	if "--bedtime" in argv or "-b" in argv:
 		logger.log("No bedtime - on")
 		bedtime = True
-		argv.remove("--bedtime")
 
 	try:
 		photos_dir = ""
@@ -104,8 +109,9 @@ def main():
 		}
 
 	except Exception:
-		logger.log("Usage: -f <folder> -t <timeout> -c <config> [--watch|--bedtime|--log]")
+		print_help()
 		raise SystemExit
+
 	if not exists(photos_dir):
 		logger.log("Photos directory doesn't exist\n%s" % photos_dir)
 		raise SystemExit
@@ -118,10 +124,9 @@ def main():
 		mail_password = config["mailer"]["password"]
 		mail_to = config["mailer"]["to"]
 		mailer = Mailer(mail_username, mail_password, mail_to, username)
-	possible_answers = ["Y", "N"]
 	answer = ""
 	if "-y" not in argv and "--yes" not in argv:
-		while answer.upper() not in possible_answers:
+		while answer.upper() not in ["Y", "N"]:
 			print("Start uploading from '%s'" % photos_dir, end="")
 			print(" with timeout of '%d'" % timeout)
 			answer = input("Are you sure? (Y/N) ")
@@ -200,13 +205,10 @@ def update_config(cfg, cfg_path):
 			username = input("Username: ")
 		print("Account  - '%s'" % username)
 		if password == "":
-			try:
-				if platform == "win32":
-					password = getpass.win_getpass("Password: ")
-				else:
-					password = getpass.getpass("Password: ")
-			except KeyboardInterrupt:
-				pass
+			if platform == "win32":
+				password = getpass.win_getpass("Password: ")
+			else:
+				password = getpass.getpass("Password: ")
 		print("Password - '%s'" % "".join(["*" for _ in password]))
 		if "caption" in config:
 			if "text" in config["caption"]:
@@ -217,11 +219,8 @@ def update_config(cfg, cfg_path):
 				reg_caption = " ".join(["#" + tag for tag in config["caption"]["reg"].split(" ")])
 			logger.log("Updated tags from config file")
 	else:
-		try:
-			username = input("Username: ")
-			password = getpass.getpass()
-		except KeyboardInterrupt:
-			pass
+		username = input("Username: ")
+		password = getpass.getpass()
 		cfg["credentials"] = {
 			"username": username,
 			"password": password
@@ -296,18 +295,43 @@ def update_tags():
 				regular_caption += line
 
 
+def generate_config(cfg, cfg_path:str):
+	cfg["credentials"] = {
+		"username": "instagram_username",
+		"password": "instagram_password",
+	}
+	cfg["config"] = {
+		"timeout": "10",
+		"folder": join(getcwd(), "photos")
+	}
+	cfg["mailer"] = {
+		"to": "mail_to@example.com",
+		"username": "mailer_username",
+		"password": "mailer_password",
+	}
+	cfg["caption"] = {
+		"text": "Photo of the day",
+		"reg": "candid nature photooftheday",
+		"bnw": "bnw blackandwhite",
+	}
+	with open(cfg_path, "w") as configfile:
+		cfg.write(configfile)
+
+
 def print_help():
 	print(version_line)
 	print("usage: instapy-bot [option] [flags]")
 	print("options:")
-	print("{:16}{:16}".format("\t-c path", "path to instapy-bot.ini config file"))
-	print("{:16}{:16}".format("\t-f path", "path to photos folder"))
-	print("{:16}{:16}".format("\t-t time", "timeout between uploads in seconds"))
+	print("{:16}{:24}".format("\t-c path", "path to instapy-bot.ini config file"))
+	print("{:16}{:24}".format("\t-f path", "path to photos folder"))
+	print("{:16}{:24}".format("\t-t time", "timeout between uploads in seconds"))
 	print("flags:")
-	print("{:16}{:16}".format("\t--yes     -y", "skip confirmation"))
-	print("{:16}{:16}".format("\t--log     -l", "enable logging to file"))
-	print("{:16}{:16}".format("\t--watch   -w", "watch the folder for new photos"))
-	print("{:16}{:16}".format("\t--bedtime -b", "don't upload photos during nighttime"))
+	print("{:16}{:24}".format("\t--yes     -y", "skip confirmation"))
+	print("{:16}{:24}".format("\t--log     -l", "enable logging to file"))
+	print("{:16}{:24}".format("\t--watch   -w", "watch the folder for new photos"))
+	print("{:16}{:24}".format("\t--bedtime -b", "don't upload photos during nighttime"))
+	print("{:16}{:24}".format("\t--config  -C", "generate config file in the current directory and exit"))
+	print("{:16}{:24}".format("\t--help    -h", "print this message and exit"))
 	print("""sample config file:
 	[credentials]
 	username = instagram_username
