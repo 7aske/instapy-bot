@@ -19,7 +19,7 @@ author = "Nikola Tasic"
 repo = "https://github.com/7aske/instapy-bot"
 version_line = "instapy-bot {}({}) | {} | {}".format(version, python_version(), author, repo)
 config = configparser.ConfigParser()
-config_path = join(getcwd(), "instapy-bot.ini")
+config_path = join(getcwd(), "instapy-bot.conf")
 username = ""
 password = ""
 folder = "photos"
@@ -73,7 +73,7 @@ def main():
 			path = argv[argv.index("-c") + 1]
 			config_path = path if isabs(path) else join(getcwd(), path)
 		else:
-			config_path = join(getcwd(), "instapy-bot.ini")
+			config_path = join(getcwd(), "instapy-bot.conf")
 		if "-f" in argv:
 			path = argv[argv.index("-f") + 1]
 			photos_dir = path if isabs(path) else join(getcwd(), path)
@@ -322,7 +322,7 @@ def print_help():
 	print(version_line)
 	print("usage: instapy-bot [option] [flags]")
 	print("options:")
-	print("{:16}{:24}".format("\t-c path", "path to instapy-bot.ini config file"))
+	print("{:16}{:24}".format("\t-c path", "path to instapy-bot.conf config file"))
 	print("{:16}{:24}".format("\t-f path", "path to photos folder"))
 	print("{:16}{:24}".format("\t-t time", "timeout between uploads in seconds"))
 	print("flags:")
