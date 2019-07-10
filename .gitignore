@@ -52,3 +52,4 @@ instapy-bot.spec
 venv
 
 photos/
+*.conf

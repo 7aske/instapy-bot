@@ -1,11 +1,8 @@
 import atexit
 import sys
-import io
-import time
 
 from configparser import ConfigParser
 from os import getcwd, path
-from subprocess import Popen, PIPE
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
@@ -17,30 +14,42 @@ from instapy_bot.gui.widgets.window import MainWindow
 
 
 class Main(QMainWindow):
-	state = {
-		"folder"        : getcwd(),
-		"timeout"       : "",
-		"ig_user"       : "",
-		"ig_pass"       : "",
-		"text_caption"  : "",
-		"reg_caption"   : "",
-		"bnw_caption"   : "",
-		"mail_use"      : False,
-		"mail_mail"     : "",
-		"mail_user"     : "",
-		"mail_pass"     : "",
-		"selected_photo": ""
-	}
-
 	def __init__(self, *args, **kwrags):
 		super().__init__(*args, **kwrags)
+		self.state = {
+			"folder"        : getcwd(),
+			"timeout"       : "",
+			"ig_user"       : "",
+			"ig_pass"       : "",
+			"captions"      : {},
+			"text_caption"  : "",
+			"reg_caption"   : "",
+			"bnw_caption"   : "",
+			"mail_use"      : False,
+			"mail_mail"     : "",
+			"mail_user"     : "",
+			"mail_pass"     : "",
+			"selected_photo": ""
+		}
 		self.ui = MainWindow()
 		self.setWindowTitle("InstaPy Bot")
 		print("Created window", self)
 
 		self.cfg = ConfigParser()
+		self.cfg_captions = ConfigParser()
+
 		self.cfg_path = path.join(getcwd(), "instapy-bot.conf")
+		self.cfg_caption_path = path.join(getcwd(), "instapy-bot_captions.conf")
+
+		if not path.exists(self.cfg_path):
+			self.generate_config(self.cfg, self.cfg_path)
+
+		if not path.exists(self.cfg_caption_path):
+			with open(self.cfg_caption_path, "w") as file:
+				file.write("")
+
 		self.read_config(self.cfg, self.cfg_path)
+		self.read_caption_config(self.cfg_captions, self.cfg_caption_path)
 
 		self.center()
 		self.show()
@@ -50,7 +59,7 @@ class Main(QMainWindow):
 		return self
 
 	def __exit__(self, exc_type, exc_val, exc_tb):
-		self.write_config()
+		pass
 
 	def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
 		if e.key() == Qt.Key_Escape:
@@ -83,22 +92,27 @@ class Main(QMainWindow):
 		# change photos path on type
 		self.ui.lineEdit_4.textChanged.connect(self.set_photos_path)
 
+		self.ui.radioButton_2.clicked.connect(self.caption_change)
+		self.ui.radioButton.clicked.connect(self.caption_change)
+
 		self.ui.lineEdit.textChanged.connect(self.update_state)
 		self.ui.lineEdit_2.textChanged.connect(self.update_state)
 		self.ui.lineEdit_4.textChanged.connect(self.update_state)
 		self.ui.lineEdit_3.textChanged.connect(self.update_state)
-		self.ui.plainTextEdit_3.textChanged.connect(self.update_state)
-		self.ui.plainTextEdit_2.textChanged.connect(self.update_state)
-		self.ui.plainTextEdit.textChanged.connect(self.update_state)
+
+		self.ui.plainTextEdit_3.textChanged.connect(self.update_specific_caption)
+		self.ui.plainTextEdit_2.textChanged.connect(self.update_specific_caption)
+		self.ui.plainTextEdit.textChanged.connect(self.update_specific_caption)
+
 		self.ui.lineEdit_7.textChanged.connect(self.update_state)
 		self.ui.lineEdit_6.textChanged.connect(self.update_state)
 		self.ui.lineEdit_5.textChanged.connect(self.update_state)
 
 		self.ui.pushButton.clicked.connect(self.upload_photo)
 
-		self.ui.checkBox.clicked.connect(self.set_mailer_usa)
+		self.ui.checkBox.clicked.connect(self.set_mailer_use)
 
-	def set_mailer_usa(self):
+	def set_mailer_use(self):
 		self.state["mail_use"] = self.ui.checkBox.isChecked()
 		self.ui.lineEdit_7.setDisabled(not self.ui.checkBox.isChecked())
 		self.ui.lineEdit_6.setDisabled(not self.ui.checkBox.isChecked())
@@ -120,6 +134,11 @@ class Main(QMainWindow):
 
 		self.state["selected_photo"] = selected_photo
 
+		if selected_photo in self.state["captions"].keys():
+			self.ui.radioButton.click()
+		else:
+			self.ui.radioButton_2.click()
+
 		image = QImage(pth)
 		if image.isNull():
 			QMessageBox.information(self, "Image Viewer", "Cannot load %s." % pth)
@@ -134,11 +153,7 @@ class Main(QMainWindow):
 		from instapy_bot.bot.utils import is_bnw
 		from instapy_bot.bot.mailer.mailer import Mailer
 
-		self.ui.label_5.setText("")
-
-		print(self.state["ig_user"])
-		print(self.state["ig_pass"])
-		print(self.state["selected_photo"])
+		self.write_out("")
 
 		photo = self.state["selected_photo"]
 		photo_path = path.join(self.state["folder"], photo)
@@ -148,20 +163,43 @@ class Main(QMainWindow):
 		try:
 			with client(self.state["ig_user"], self.state["ig_pass"]) as cli:
 				cli.upload(photo_path, photo_caption)
-			self.ui.label_5.setText("Photo uploaded successfully!")
+
+			self.write_outt("Photo uploaded successfully!")
 			print("Photo uploaded successfully!")
+
 			mailer = Mailer(self.state["mail_user"], self.state["mail_pass"], self.state["mail_mail"],
 			                self.state["ig_user"])
 			mailer.send_mail("Not scheduled", 0)
 		except IOError as e:
 			if "The password you entered is incorrect." in str(e):
-				self.ui.label_5.setText("Password you entered is incorrect!")
+				self.write_out("Password you entered is incorrect!")
 				print("Password you entered is incorrect!")
+
 			else:
-				self.ui.label_5.setText(str(e))
+				self.write_out(str(e))
 				print(e)
 		except Exception as e:
 			self.ui.label_5.setText(str(e))
+
+	def read_caption_config(self, cfg, cfg_path):
+		if path.exists(cfg_path):
+			cfg.read(cfg_path)
+			for key in cfg.keys():
+				if key != "DEFAULT":
+					self.state["captions"][key] = {
+						"text": cfg[key]["text"],
+						"reg" : cfg[key]["reg"],
+						"bnw" : cfg[key]["bnw"],
+					}
+
+	def update_captions_config(self):
+		for key in self.state["captions"]:
+			self.cfg_captions[key] = self.state["captions"][key]
+
+	def write_caption_config(self):
+		self.update_captions_config()
+		with open(self.cfg_caption_path, "w") as configfile:
+			self.cfg_captions.write(configfile)
 
 	def render_config(self):
 
@@ -191,14 +229,56 @@ class Main(QMainWindow):
 		with open(self.cfg_path, "w") as configfile:
 			self.cfg.write(configfile)
 
+	def caption_change(self):
+		self.ui.plainTextEdit_3.textChanged.disconnect(self.update_specific_caption)
+		self.ui.plainTextEdit_2.textChanged.disconnect(self.update_specific_caption)
+		self.ui.plainTextEdit.textChanged.disconnect(self.update_specific_caption)
+
+		if self.ui.radioButton_2.isChecked():
+			self.ui.plainTextEdit_3.setPlainText(self.state["text_caption"])
+			self.ui.plainTextEdit_2.setPlainText(self.state["reg_caption"])
+			self.ui.plainTextEdit.setPlainText(self.state["bnw_caption"])
+
+		elif self.ui.radioButton.isChecked():
+			if self.state["selected_photo"] != "":
+				if self.state["selected_photo"] in self.state["captions"].keys():
+					self.ui.plainTextEdit_3.setPlainText(self.state["captions"][self.state["selected_photo"]]["text"])
+					self.ui.plainTextEdit_2.setPlainText(self.state["captions"][self.state["selected_photo"]]["reg"])
+					self.ui.plainTextEdit.setPlainText(self.state["captions"][self.state["selected_photo"]]["bnw"])
+
+				else:
+					self.state["captions"][self.state["selected_photo"]] = {
+						"text": self.state["text_caption"],
+						"reg" : self.state["reg_caption"],
+						"bnw" : self.state["bnw_caption"],
+					}
+			else:
+				self.ui.plainTextEdit_3.setPlainText(self.state["text_caption"])
+				self.ui.plainTextEdit_2.setPlainText(self.state["reg_caption"])
+				self.ui.plainTextEdit.setPlainText(self.state["bnw_caption"])
+
+		self.ui.plainTextEdit_3.textChanged.connect(self.update_specific_caption)
+		self.ui.plainTextEdit_2.textChanged.connect(self.update_specific_caption)
+		self.ui.plainTextEdit.textChanged.connect(self.update_specific_caption)
+
+	def update_specific_caption(self):
+		if self.ui.radioButton_2.isChecked():
+			self.state["text_caption"] = self.ui.plainTextEdit_3.toPlainText()
+			self.state["reg_caption"] = self.ui.plainTextEdit_2.toPlainText()
+			self.state["bnw_caption"] = self.ui.plainTextEdit.toPlainText()
+
+		elif self.state["selected_photo"] != "":
+			self.state["captions"][self.state["selected_photo"]] = {
+				"text": self.ui.plainTextEdit_3.toPlainText(),
+				"reg" : self.ui.plainTextEdit_2.toPlainText(),
+				"bnw" : self.ui.plainTextEdit.toPlainText(),
+			}
+
 	def update_state(self):
 		self.state["ig_user"] = self.ui.lineEdit.text()
 		self.state["ig_pass"] = self.ui.lineEdit_2.text()
 		self.state["folder"] = self.ui.lineEdit_4.text()
 		self.state["timeout"] = self.ui.lineEdit_3.text()
-		self.state["text_caption"] = self.ui.plainTextEdit_3.toPlainText()
-		self.state["reg_caption"] = self.ui.plainTextEdit_2.toPlainText()
-		self.state["bnw_caption"] = self.ui.plainTextEdit.toPlainText()
 		self.state["mail_mail"] = self.ui.lineEdit_7.text()
 		self.state["mail_user"] = self.ui.lineEdit_6.text()
 		self.state["mail_pass"] = self.ui.lineEdit_5.text()
@@ -266,9 +346,42 @@ class Main(QMainWindow):
 				self.state["mail_user"] = ""
 				self.state["mail_pass"] = ""
 
+	def generate_config(self, cfg, cfg_path: str):
+		cfg["credentials"] = {
+			"username": "instagram_username",
+			"password": "instagram_password",
+		}
+		cfg["config"] = {
+			"timeout": "10",
+			"folder" : path.join(getcwd(), "photos")
+		}
+		cfg["mailer"] = {
+			"to"      : "mail_to@example.com",
+			"username": "mailer_username",
+			"password": "mailer_password",
+		}
+		cfg["caption"] = {
+			"text": "Photo of the day",
+			"reg" : "candid nature photooftheday",
+			"bnw" : "bnw blackandwhite",
+		}
+		with open(cfg_path, "w") as configfile:
+			cfg.write(configfile)
+
+	def write_out(self, text: str):
+		self.ui.label_5.setText(text)
+
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
-	with Main() as main:
-		pass
+	main = Main()
+
+
+	@atexit.register
+	def write_config():
+		if main is not None:
+			main.write_config()
+			main.write_caption_config()
+
+
 	sys.exit(app.exec_())
