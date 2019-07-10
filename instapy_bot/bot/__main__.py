@@ -210,13 +210,13 @@ def update_config(cfg, cfg_path):
 			else:
 				password = getpass.getpass("Password: ")
 		print("Password - '%s'" % "".join(["*" for _ in password]))
-		if "caption" in config:
-			if "text" in config["caption"]:
-				text_caption = config["caption"]["text"]
-			if "bnw" in config["caption"]:
-				bnw_caption = " ".join(["#" + tag for tag in config["caption"]["bnw"].split(" ")])
-			if "reg" in config["caption"]:
-				reg_caption = " ".join(["#" + tag for tag in config["caption"]["reg"].split(" ")])
+		if "caption" in cfg:
+			if "text" in cfg["caption"]:
+				text_caption = cfg["caption"]["text"]
+			if "bnw" in cfg["caption"]:
+				bnw_caption = " ".join(["#" + tag for tag in cfg["caption"]["bnw"].split(" ")])
+			if "reg" in cfg["caption"]:
+				reg_caption = " ".join(["#" + tag for tag in cfg["caption"]["reg"].split(" ")])
 			logger.log("Updated tags from config file")
 	else:
 		username = input("Username: ")
