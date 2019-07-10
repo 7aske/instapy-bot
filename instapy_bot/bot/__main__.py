@@ -9,7 +9,8 @@ from time import sleep
 from datetime import datetime as dt, timedelta
 
 from instapy_bot.cli import client
-from instapy_bot.bot.utils import is_bnw, get_timeout, validate_mail, PhotoStack, ServerError, WrongPassword
+from instapy_bot.bot.utils import is_bnw, get_timeout, validate_mail, PhotoStack
+from instapy_bot.bot.errors import ServerError, WrongPassword
 from instapy_bot.bot.logger.logger import Logger
 from instapy_bot.bot.mailer.mailer import Mailer
 from instapy_bot.bot.utils.photo import Photo
