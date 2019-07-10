@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1049</width>
     <height>663</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
      <rect>
       <x>10</x>
       <y>0</y>
-      <width>271</width>
+      <width>524</width>
       <height>588</height>
      </rect>
     </property>
@@ -77,15 +77,21 @@
       <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
         <widget class="QTreeView" name="treeView">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="showDropIndicator" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::SingleSelection</enum>
+         </property>
          <property name="rootIsDecorated">
           <bool>true</bool>
          </property>
          <property name="animated">
           <bool>true</bool>
          </property>
-         <attribute name="headerVisible">
-          <bool>true</bool>
-         </attribute>
         </widget>
        </item>
       </layout>
@@ -170,10 +176,10 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>286</x>
+      <x>540</x>
       <y>390</y>
       <width>349</width>
-      <height>198</height>
+      <height>222</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0">
@@ -235,9 +241,9 @@
    <widget class="QWidget" name="verticalLayoutWidget_3">
     <property name="geometry">
      <rect>
-      <x>287</x>
+      <x>540</x>
       <y>1</y>
-      <width>509</width>
+      <width>508</width>
       <height>381</height>
      </rect>
     </property>
@@ -257,7 +263,7 @@
    <widget class="QWidget" name="verticalLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>640</x>
+      <x>892</x>
       <y>390</y>
       <width>155</width>
       <height>198</height>
@@ -278,6 +284,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_3">
+       <property name="text">
+        <string>Stop All</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
    <widget class="QWidget" name="verticalLayoutWidget_4">
@@ -285,7 +298,7 @@
      <rect>
       <x>10</x>
       <y>590</y>
-      <width>785</width>
+      <width>1037</width>
       <height>23</height>
      </rect>
     </property>
@@ -305,7 +318,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1049</width>
      <height>29</height>
     </rect>
    </property>

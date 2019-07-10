@@ -1,14 +1,18 @@
 import atexit
 import sys
+import time
 
 from configparser import ConfigParser
-from os import getcwd, path
+from datetime import timedelta
+from os import getcwd, path, listdir, rename
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 
+from instapy_bot.bot.utils import PhotoStack, get_timeout
+from instapy_bot.bot.utils.photo import Photo
 from instapy_bot.cli import client
 from instapy_bot.gui.widgets.window import MainWindow
 
@@ -31,6 +35,10 @@ class Main(QMainWindow):
 			"mail_pass"     : "",
 			"selected_photo": ""
 		}
+		self.upload_thread = None
+		self.dt_format = "%Y/%d/%m %H:%M:%S"
+		self.next_upload = str(path.join(getcwd(), "nextupload"))
+		self.photos = PhotoStack()
 		self.ui = MainWindow()
 		self.setWindowTitle("InstaPy Bot")
 		print("Created window", self)
@@ -75,6 +83,7 @@ class Main(QMainWindow):
 	def start(self):
 		from PyQt5.QtWidgets import QFileSystemModel
 		from PyQt5.QtCore import QDir
+
 		self.ui.setupUi(self)
 
 		self.treeModel = QFileSystemModel()
@@ -84,7 +93,7 @@ class Main(QMainWindow):
 		self.ui.treeView.setRootIndex(self.treeModel.index(getcwd()))
 
 		# render selected image to screen
-		self.ui.treeView.clicked.connect(self.render_image)
+		self.ui.treeView.clicked.connect(self.select_photo)
 
 		# render config on start
 		self.render_config()
@@ -108,7 +117,9 @@ class Main(QMainWindow):
 		self.ui.lineEdit_6.textChanged.connect(self.update_state)
 		self.ui.lineEdit_5.textChanged.connect(self.update_state)
 
-		self.ui.pushButton.clicked.connect(self.upload_photo)
+		self.ui.pushButton.clicked.connect(self.threaded_upload_photo)
+		self.ui.pushButton_2.clicked.connect(self.threaded_upload_loop)
+		self.ui.pushButton_3.clicked.connect(self.stop_threaded_upload)
 
 		self.ui.checkBox.clicked.connect(self.set_mailer_use)
 
@@ -117,23 +128,25 @@ class Main(QMainWindow):
 		self.ui.lineEdit_7.setDisabled(not self.ui.checkBox.isChecked())
 		self.ui.lineEdit_6.setDisabled(not self.ui.checkBox.isChecked())
 		self.ui.lineEdit_5.setDisabled(not self.ui.checkBox.isChecked())
-		print(self.state["mail_use"])
 
 	def set_photos_path(self):
 		text = self.ui.lineEdit_4.text()
 
 		if path.exists(text) and path.isdir(text):
 			self.state["folder"] = text
-			self.ui.treeView.setRootIndex(self.treeModel.index(self.state["folder"]))
+			self.ui.treeView.setRootIndex(self.treeModel.index(text))
 
-	def render_image(self):
+	def select_photo(self):
 		index = self.ui.treeView.selectedIndexes()[0]
 		item = index.model()
 		selected_photo = item.itemData(index)[0]
-		pth = path.join(self.state["folder"], selected_photo)
 
 		self.state["selected_photo"] = selected_photo
+		self.render_image()
 
+	def render_image(self):
+		selected_photo = self.state["selected_photo"]
+		pth = path.join(self.state["folder"], selected_photo)
 		if selected_photo in self.state["captions"].keys():
 			self.ui.radioButton.click()
 		else:
@@ -149,9 +162,15 @@ class Main(QMainWindow):
 		                                      QtCore.Qt.KeepAspectRatio)
 		self.ui.label_4.setPixmap(pic)
 
+	def threaded_upload_photo(self):
+		import threading
+		self.upload_thread = threading.Thread(target=self.upload_photo)
+		self.upload_thread.setDaemon(True)
+		self.upload_thread.start()
+
 	def upload_photo(self):
 		from instapy_bot.bot.utils import is_bnw
-		from instapy_bot.bot.mailer.mailer import Mailer
+		from datetime import datetime as dt
 
 		self.write_out("")
 
@@ -164,12 +183,26 @@ class Main(QMainWindow):
 			with client(self.state["ig_user"], self.state["ig_pass"]) as cli:
 				cli.upload(photo_path, photo_caption)
 
-			self.write_outt("Photo uploaded successfully!")
+			self.write_out("Photo uploaded successfully!")
 			print("Photo uploaded successfully!")
+			rename(photo_path, photo_path + ".UPLOADED")
+			s = get_timeout(int(self.state["timeout"]))
+			n = dt.now() + timedelta(seconds=s)
+			with open(self.next_upload, "w") as nextupload:
+				nextupload.write(n.strftime(self.dt_format))
+			if self.state["mail_use"]:
+				try:
+					from instapy_bot.bot.mailer.mailer import Mailer
+					mailer = Mailer(self.state["mail_user"], self.state["mail_pass"],
+					                self.state["mail_mail"],
+					                self.state["ig_user"])
+					mailer.send_mail(n.strftime(self.dt_format), len(self.photos))
+					self.write_out("Mail sent")
+				except IOError:
+					self.write_out("Unable to send mail")
+			self.write_out("Next upload - %s" % n.strftime(self.dt_format))
+			time.sleep(s)
 
-			mailer = Mailer(self.state["mail_user"], self.state["mail_pass"], self.state["mail_mail"],
-			                self.state["ig_user"])
-			mailer.send_mail("Not scheduled", 0)
 		except IOError as e:
 			if "The password you entered is incorrect." in str(e):
 				self.write_out("Password you entered is incorrect!")
@@ -201,8 +234,67 @@ class Main(QMainWindow):
 		with open(self.cfg_caption_path, "w") as configfile:
 			self.cfg_captions.write(configfile)
 
-	def render_config(self):
+	def update_photos(self):
+		for photo in listdir(self.state["folder"]):
+			name, ext = path.splitext(photo)
+			if ext.upper() == ".JPG" or ext.upper() == ".PNG" or ext.upper() == ".JPEG":
+				photo_object = Photo(path.join(self.state["folder"], photo))
+				self.photos.push(photo_object)
+		if len(self.photos) == 0:
+			self.write_out("Done")
 
+	def stop_threaded_upload(self):
+		if self.upload_thread is not None:
+			self.write_out("Stopped")
+			self.upload_thread = None
+
+	def threaded_upload_loop(self):
+		import threading
+		self.upload_thread = threading.Thread(target=self.upload_loop)
+		self.upload_thread.setDaemon(True)
+		self.upload_thread.start()
+
+	def upload_loop(self):
+		from instapy_bot.bot.errors import ServerError
+		from instapy_bot.bot.errors import WrongPassword
+		from datetime import datetime as dt
+		while True:
+			self.write_out("Photos - %d" % len(self.photos))
+			if len(self.photos) == 0:
+				self.update_photos()
+				s = min(3600, int(self.state["timeout"]))
+				n = dt.now() + timedelta(seconds=s)
+				self.write_out("Next refresh - %s" % n.strftime(self.dt_format))
+				time.sleep(s)
+			else:
+				date = dt.now()
+				newdate = dt.now()
+				if path.exists(self.next_upload):
+					with open(self.next_upload, "r") as nextupload:
+						content = nextupload.read()
+						date = dt.strptime(content, self.dt_format)
+				if newdate >= date:
+					if 1 < newdate.hour < 9 and self.state["bedtime"]:
+						self.write_out("Bed time, skipping upload")
+						time.sleep(get_timeout((10 - newdate.hour) * 3600))
+					else:
+						try:
+							self.state["selected_photo"] = path.basename(self.photos.pop().path)
+							self.render_image()
+							self.upload_photo()
+						except WrongPassword as e:
+							self.write_out(str(e))
+							return
+						except ServerError as e:
+							self.write_out(str(e))
+							return
+				else:
+					newdate = date - dt.now()
+					self.write_out("Waiting for scheduled upload")
+					self.write_out("Next upload - %s" % date.strftime(self.dt_format))
+					time.sleep(newdate.seconds + 1)
+
+	def render_config(self):
 		self.ui.lineEdit.setText(self.state["ig_user"])
 		self.ui.lineEdit_2.setText(self.state["ig_pass"])
 
@@ -252,6 +344,7 @@ class Main(QMainWindow):
 						"reg" : self.state["reg_caption"],
 						"bnw" : self.state["bnw_caption"],
 					}
+
 			else:
 				self.ui.plainTextEdit_3.setPlainText(self.state["text_caption"])
 				self.ui.plainTextEdit_2.setPlainText(self.state["reg_caption"])
@@ -382,6 +475,7 @@ if __name__ == "__main__":
 		if main is not None:
 			main.write_config()
 			main.write_caption_config()
+			main.stop_threaded_upload()
 
 
 	sys.exit(app.exec_())
