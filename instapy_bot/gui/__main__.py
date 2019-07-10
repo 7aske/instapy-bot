@@ -1,11 +1,11 @@
 import sys
-from subprocess import Popen, PIPE
+
 from PyQt5.QtWidgets import QApplication
 
-from instapy_bot.gui.window.MainWindow import MainWindow
+from instapy_bot.gui.start import Main
 
 app = QApplication(sys.argv)
-window = MainWindow()
 
-# gs = Popen(["echo", "testssss"], stderr=PIPE, stdout=PIPE).stdout.read()
+main = Main()
+
 sys.exit(app.exec_())

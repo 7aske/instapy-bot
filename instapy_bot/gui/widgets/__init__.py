@@ -1,0 +1,1 @@
+from instapy_bot.gui.widgets.window import MainWindow as MainWindow

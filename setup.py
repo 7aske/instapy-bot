@@ -16,5 +16,6 @@ setuptools.setup(name="instapy_bot",
                  keywords="python instagram bot",
                  entry_points={
                      "console_scripts": ["instapy-cli=instapy_bot.cli.__main__:main",
-                                         "instapy-bot=instapy_bot.bot.__main__:main"],
+                                         "instapy-bot=instapy_bot.bot.__main__:main",
+                                         "instapy-gui=instapy_bot.gui.__main__:main"],
                  })

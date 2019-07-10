@@ -7,7 +7,7 @@ version = pkg_resources.require("instapy_bot")[0].version
 
 
 def main(args=None):
-    print("instapy-bot " + version + " | python " + python_version())
+    print("window " + version + " | python " + python_version())
 
     parser = OptionParser(usage="usage: %prog [options]")
     parser.add_option("-u", dest="username", help="username")
