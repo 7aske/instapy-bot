@@ -7,7 +7,7 @@ from datetime import timedelta
 from os import getcwd, path, listdir, rename
 
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 
@@ -123,6 +123,8 @@ class Main(QMainWindow):
 
 		self.ui.checkBox.clicked.connect(self.set_mailer_use)
 
+		self.ui.pushButton_4.clicked.connect(self.open_folder_dialog)
+
 	def set_mailer_use(self):
 		self.state["mail_use"] = self.ui.checkBox.isChecked()
 		self.ui.lineEdit_7.setDisabled(not self.ui.checkBox.isChecked())
@@ -143,6 +145,17 @@ class Main(QMainWindow):
 
 		self.state["selected_photo"] = selected_photo
 		self.render_image()
+
+	def open_folder_dialog(self):
+		dialog = QFileDialog()
+		dialog.setFileMode(QFileDialog.DirectoryOnly)
+
+		dialog.setSidebarUrls([QtCore.QUrl.fromLocalFile(getcwd())])
+
+		if dialog.exec_():
+			folder = dialog.selectedFiles()[0]
+			self.state["folder"] = folder
+			self.render_config()
 
 	def render_image(self):
 		selected_photo = self.state["selected_photo"]

@@ -112,14 +112,25 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_4">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="placeholderText">
-          <string>Folder</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLineEdit" name="lineEdit_4">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="placeholderText">
+            <string>Folder</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_4">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QLineEdit" name="lineEdit_3">
